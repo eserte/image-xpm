@@ -1,0 +1,274 @@
+=head1 NAME
+
+Image::Xpm - Load, create, manipulate and save xpm image files.
+
+=head1 SYNOPSIS
+
+    use Image::Xpm ;
+
+    my $j = Image::Xpm->new( -file, 'Camel.xpm' ) ;
+
+    my $i = Image::Xpm->new( -width => 10, -height => 16 ) ;
+
+    my $h = $i->new ; # Copy of $i
+
+    $i->xy( 5, 8, 'red' ) ;       # Set a colour (& add to palette if necessary)
+    print $i->xy( 9, 3 ) ;        # Get a colour
+
+    $i->xy( 120, 130, '#1256DD' ) ;
+    $i->xy( 120, 130, $i->rgb2colour( 66, 0x4D, 31 ) ) ;
+
+    $i->vec( 24, '#808080' ) ;    # Set a colour using a vector offset
+    print $i->vec( 24 ) ;         # Get a colour using a vector offset
+
+    print $i->get( -width ) ;     # Get and set object attributes
+    $i->set( -height, 15 ) ;
+
+    $i->load( 'test.xpm' ) ;
+    $i->save ;
+
+    # Changing just the palette
+    $i->add_colours( qw( red green blue #123456 #C0C0C0 ) ) ;
+    $i->del_colour( 'blue' ) ;
+
+=head1 DESCRIPTION
+
+=head2 new()
+
+    my $i = Image::Xpm->new( -file => 'test.xpm' ) ;
+    my $j = Image::Xpm->new( -width => 12, -height => 18 ) ;
+    my $k = $i->new ;
+
+We can create a new xpm image by reading in a file, or by creating an image
+from scratch (all the pixels are white by default), or by copying an image
+object that we created earlier.
+
+If we set C<-file> then all the other arguments are ignored (since they're
+taken from the file). If we don't specify a file, C<-width> and C<-height> are
+mandatory and C<-cpp> will default to 1 unless specified otherwise.
+
+Note that if you are creating an image from scratch you should not set
+C<-file> when you call C<new>; you should either C<set> it later or simply
+include the filename in any call to C<save> which will set it for you.
+
+=over
+
+=item C<-file>
+
+The name of the file to read when creating the image. May contain a full path.
+This is also the default name used for C<load>ing and C<save>ing, though it
+can be overridden when you load or save.
+
+=item C<-width>
+
+The width of the image; taken from the file or set when the object is created;
+read-only.
+
+=item C<-height>
+
+The height of the image; taken from the file or set when the object is created;
+read-only.
+
+=item C<-cpp>
+
+Characters per pixel. Commonly 1 or 2, default is 1 for images created by the
+module; read-only.
+
+If we wanted to change an image's -cpp we could do this: 
+
+    my $orig = Image::Xpm( -file => 'orig.xpm' ) ;
+    # $orig is assumed to have -cpp != 2.
+    my $new  = Image::Xpm(
+                -width  => $orig->get( -width ),
+                -height => $orig->get( -height ),
+                -cpp    => 2,
+                ) ;
+    for( my $x = 0 ; $x < $orig->get( -width ) ; $x++ ) {
+        for( my $y = 0 ; $y < $orig->get( -height ) ; $y++ ) {
+            $new->xy( $x, $y, $orig->xy( $x, $y ) ) ;
+        }
+    }
+    $new->save( 'orig2cpp.xpm' ) ;
+
+Note that it is possible to change from a higher -cpp to a lower -cpp,
+providing there are enough possible character combinations to represent the
+palette (which may be the case as often the palette contains more colours than
+are actually used).
+
+=item C<-hotx>
+
+The x-coord of the image's hotspot; taken from the file or set when the object
+is created. Set to -1 if there is no hotspot.
+
+=item C<-hoty>
+
+The y-coord of the image's hotspot; taken from the file or set when the object
+is created. Set to -1 if there is no hotspot.
+
+=item C<-ncolours>
+
+The number of unique colours in the palette. The image may not be using all
+of them; read-only.
+
+=item C<-cindex>
+
+An hash whose keys are colour names, e.g. '#123456' or 'blue' and whose values
+are the palette names, e.g. ' ', '#', etc; read-only. If you want to add more
+colours to the image itself simply write pixels with the new colours using
+C<xy>; if you want to add more colours to the palette without necessarily
+using them in the image use C<add_colours>.
+
+=item C<-palette>
+
+A hash whose keys are the palette names, e.g. ' ', '#', etc. and whose values
+are hashes of colour type x colour name pairs, e.g. C<c =E<gt> red>, etc;
+read-only. If you want to add more colours to the image itself simply write
+pixels with the new colours using C<xy>; if you want to add more colours to
+the palette without necessarily using them in the image use C<add_colours>.
+
+=item C<-pixels>
+
+A string of palette names which constitutes the data for the image itself;
+read-only.
+
+=item C<-extname>
+
+The name of the extension text if any; commonly XPMEXT; read-only.
+
+=item C<-extlines>
+
+The lines of text of any extensions; read-only.
+
+=item C<-comments>
+
+An array (possibly empty) of comment lines that were in a file that was read
+in; they will be written out although we make no guarantee regarding their
+placement; read-only.
+
+=back
+
+=head2 get()
+    
+    my $width = $i->get( -width ) ;
+    my( $hotx, $hoty ) = $i->get( -hotx, -hoty ) ;
+
+Get any of the object's attributes. Multiple attributes may be requested in a
+single call.
+
+See C<xy> and C<vec> to get/set colours of the image itself.
+
+=head2 set()
+
+    $i->set( -hotx => 120, -hoty => 32 ) ;
+
+Set any of the object's attributes. Multiple attributes may be set in a single
+call; some attributes are read-only.
+
+See C<xy> and C<vec> to get/set colours of the image itself.
+
+=head2 xy()
+
+    $i->xy( 4, 11, '#123454' ) ;    # Set the colour at point 4,11
+    my $v = $i->xy( 9, 17 ) ;       # Get the colour at point 9,17
+
+Get/set colours using x, y coordinates; coordinates start at 0. If the colour
+does not exist in the palette it will be added automatically.
+
+=head2 vec()
+
+    $i->vec( 43, 0 ) ;      # Unset the bit at offset 43
+    my $v = $i->vec( 87 ) ; # Get the bit at offset 87
+
+Get/set bits using vector offsets; offsets start at 0. The offset of a pixel
+is ( ( y * width * cpp ) + ( x * cpp ) ).
+
+=head2 rgb2colour() and rgb2color()
+    
+    $i->rgb2colour( 0xff, 0x40, 0x80 ) ;    # Returns #ff4080
+    Image::Xpm->rgb2colour( 10, 20, 30 ) ;  # Returns #0a141e
+
+Convenience class or object methods which accept three integers and return a
+colour name string.
+
+=head2 load()
+
+    $i->load ;
+    $i->load( 'test.xpm' ) ;
+
+Load the image whose name is given, or if none is given load the image whose
+name is in the C<-file> attribute.
+
+=head2 save()
+
+    $i->save ;
+    $i->save( 'test.xpm' ) ;
+
+Save the image using the name given, or if none is given save the image using
+the name in the C<-file> attribute. The image is saved in xpm format.
+
+=head2 add_colours() and add_colors()
+
+    $i->add_colours( qw( #C0C0DD red blue #123456 ) ) ;
+
+These are for adding colours to the palette; you don't need to use them to set
+a pixel's colour - use C<xy> for that.
+
+Add one or more colour names either as hex strings or as literal colour names.
+These are always added as type 'c' colours; duplicates are ignored.
+
+NB If you just want to set some pixels in colours that may not be in the
+palette, simply do so using C<xy> since new colours are added automatically.
+
+=head2 del_colour() and del_color()
+
+    $i->del_colour( 'green' ) ;
+
+Delete a colour from the palette; returns undef if the colour isn't in the
+palette, false (0) if the colour is in the palette but also in the image, or
+true (1) if the colour has been deleted (i.e. it was in the palette but not in
+use in the image).
+
+=head1 EXAMPLE
+
+We do not provide any graphical transformations; you are expected to inherit
+or aggregate the relevant classes and provide your own. Below is an example of
+copying an image from xbm format to xpm:
+
+    use Image::Xbm ;
+    use Image::Xpm ;
+
+    my $orig = Image::Xbm->new( -file => 'orig.xbm' ) ;
+    my $new  = Image::Xpm->new( 
+                -width  => $orig->get( -width ), 
+                -height => $orig->get( -height ), 
+                ) ;
+    my( $setcolour, $unsetcolour ) = qw( black white ) ;
+
+    for( my $x = 0 ; $x < $orig->get( -width ) ; $x++ ) {
+        for( my $y = 0 ; $y < $orig->get( -height ) ; $y++ ) {
+            $new->xy( $x, $y, $orig->xy( $x, $y ) ? $setcolour : $unsetcolour ) ;
+        }
+    }
+
+    $new->save( 'new.xpm' ) ;
+
+
+=head1 CHANGES
+
+2000/05/03 
+
+Created. 
+
+=head1 AUTHOR
+
+Mark Summerfield. I can be contacted as <summer@perlpress.com> -
+please include the word 'xpm' in the subject line.
+
+=head1 COPYRIGHT
+
+Copyright (c) Mark Summerfield 2000. All Rights Reserved.
+
+This module may be used/distributed/modified under the LGPL. 
+
+=cut
+
