@@ -1,11 +1,11 @@
 package Image::Xpm;    # Documented at the __END__
 
-# $Id: Xpm.pm,v 1.15 2000/05/25 20:44:37 root Exp $
+# $Id: Xpm.pm,v 1.17 2000/11/09 19:05:31 mark Exp mark $
 
 use strict;
 
 use vars qw($VERSION @ISA);
-$VERSION = '1.08';
+$VERSION = '1.09';
 
 use Image::Base;
 
@@ -320,7 +320,17 @@ sub load { # Object method
     local $_;
     my $fh = Symbol::gensym;
 
-    open $fh, $file or croak "load() failed to open `$file': $!";
+    if( not ref $file ) {
+        open $fh, $file or croak "load() failed to open `$file': $!" ;
+    }
+    elsif( ref($file) eq 'SCALAR' ) {
+        require IO::String;
+        $fh = IO::String->new( $$file );
+    }
+    else {
+        seek($file, 0, 0) or croak "load() can't rewind handle for `$file': $!";
+        $fh = $file;
+    }
 
     $self->{-palette}       = {};
     $self->{-cindex}        = {};
@@ -753,6 +763,12 @@ use in the image).
     my $j = $i->new_from_image(ref $i, -cpp => 2);
 
 =head1 CHANGES
+
+2000/11/09
+
+Added Jerrad Pierce's patch to allow load() to accept filehandles or strings;
+will document in next release.
+
 
 2000/10/19
 
