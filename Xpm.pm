@@ -1,11 +1,11 @@
 package Image::Xpm ;    # Documented at the __END__
 
-# $Id: Xpm.pm,v 1.12 2000/05/04 20:12:49 root Exp $
+# $Id: Xpm.pm,v 1.13 2000/05/06 12:49:00 root Exp root $
 
 use strict ;
 
 use vars qw( $VERSION @ISA ) ;
-$VERSION = '1.04' ;
+$VERSION = '1.05' ;
 
 use Image::Base ;
 
@@ -159,7 +159,11 @@ sub new { # Class and object method
 
     $self->{-cc} = ' ' x $self->{-cpp} ;
 
-    $self->load if $self->get( '-file' ) and not $self->{-pixels} ;
+    my $file = $self->get( '-file' ) ;
+    $self->load if defined $file and -r $file and not $self->{-pixels} ;
+
+    croak "new() `$file' not found or unreadable" 
+    if defined $file and not defined $self->get( '-width' ) ;
 
     foreach my $field ( qw( -width -height -cpp ) ) {
         croak "new() $field must be set" unless defined $self->get( $field ) ;
@@ -544,10 +548,6 @@ object that we created earlier.
 If we set C<-file> then all the other arguments are ignored (since they're
 taken from the file). If we don't specify a file, C<-width> and C<-height> are
 mandatory and C<-cpp> will default to 1 unless specified otherwise.
-
-Note that if you are creating an image from scratch you should not set
-C<-file> when you call C<new>; you should either C<set> it later or simply
-include the filename in any call to C<save> which will set it for you.
 
 =over
 
