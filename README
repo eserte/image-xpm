@@ -236,6 +236,12 @@ use in the image).
 
 =head1 CHANGES
 
+2000/05/25
+
+Fixed a bug in the test file; fixed a bug in save() which affected xpm
+extensions.
+
+
 2000/05/04
 
 Fixed bugs in xy(), vec(), save() and load(). 

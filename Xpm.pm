@@ -1,11 +1,11 @@
 package Image::Xpm ;    # Documented at the __END__
 
-# $Id: Xpm.pm,v 1.13 2000/05/06 12:49:00 root Exp root $
+# $Id: Xpm.pm,v 1.15 2000/05/25 20:44:37 root Exp $
 
 use strict ;
 
 use vars qw( $VERSION @ISA ) ;
-$VERSION = '1.05' ;
+$VERSION = '1.07' ;
 
 use Image::Base ;
 
@@ -43,17 +43,24 @@ my @FIELD = qw( -file -width -height -ncolours -cpp -hotx -hoty -cc
                 -palette -cindex -pixels 
                 -extname -extlines -comments -commentpixel -commentcolour ) ;
 
-use readonly
-        # States for parsing an xpm file
-        '$STATE_START'      => 0,
-        '$STATE_IN_COMMENT' => 1,
-        '$STATE_ARRAY'      => 2,
-        '$STATE_VALUES'     => 3,
-        '$STATE_COLOURS'    => 4,
-        '$STATE_PIXELS'     => 5,
-        '$STATE_EXTENSIONS' => 6,
-        '$STATE_FINISH'     => 7,
-        ;
+# States for parsing an xpm file
+my $STATE_START      =   0 ;
+my $STATE_IN_COMMENT =   1 ;
+my $STATE_ARRAY      =   2 ;
+my $STATE_VALUES     =   3 ;
+my $STATE_COLOURS    =   4 ;
+my $STATE_PIXELS     =   5 ;
+my $STATE_EXTENSIONS =   6 ;
+my $STATE_FINISH     =   7 ;
+
+my $MAX_CH           = 255 ;
+my $CH_BS            = 127 ;
+my $CH_BSLASH        =  92 ;
+my $CH_QUOTE         =  39 ;
+my $CH_DQUOTE        =  34 ;
+my $CH_SPACE         =  32 ;
+
+my $UNSET            =  -1 ;
 
 ### Private methods
 #
@@ -72,16 +79,16 @@ sub _nextcc { # Object method
         my @ch    = unpack "C$self->{-cpp}", $self->{-cc} ;
         my $found = 0 ;
         foreach my $i ( reverse 0..$self->{-cpp} - 1 ) {
-            if( $ch[$i] < 255 ) {
+            if( $ch[$i] < $MAX_CH ) {
                 $ch[$i]++ ;
                 $ch[$i]++ # Skip BS, \, ' and " -- using magic nums for speed
-                while $ch[$i] == 127 or $ch[$i] == 92 or
-                      $ch[$i] ==  39 or $ch[$i] == 34 ;
+                while $ch[$i] == $CH_BS    or $ch[$i] == $CH_BSLASH or
+                      $ch[$i] == $CH_QUOTE or $ch[$i] == $CH_DQUOTE ;
                 $found++ ;
                 last ; # Finish as soon as we've incremented something
             }
             else {
-                $ch[$i] = 32 ; # Skip control chars
+                $ch[$i] = $CH_SPACE ; # Skip control chars
             }
         }
         croak "_nextcc() ran out of palette characters" unless $found ;
@@ -131,8 +138,8 @@ sub new { # Class and object method
 
     # Defaults
     $self = {
-            '-hotx'          => -1, # This is used to signify unset
-            '-hoty'          => -1, # This is used to signify unset
+            '-hotx'          => $UNSET, 
+            '-hoty'          => $UNSET,
             '-cpp'           => 1,
             '-palette'       => {},
             '-cindex'        => {},
@@ -196,9 +203,9 @@ sub set { # Object method
             /^-(?:cpp|comments|cindex|ncolours|palette|pixels|
                   width|height|ext(?:name|lines))/ox ;
         carp "set() -hotx `$val' is out of range" 
-        if $field eq '-hotx' and ( $val < -1 or $val >= $self->get( '-width' ) ) ;
+        if $field eq '-hotx' and ( $val < $UNSET or $val >= $self->get( '-width' ) ) ;
         carp "set() -hoty `$val' is out of range" 
-        if $field eq '-hoty' and ( $val < -1 or $val >= $self->get( '-height' ) ) ;
+        if $field eq '-hoty' and ( $val < $UNSET or $val >= $self->get( '-height' ) ) ;
 
         $self->_set( $field, $val ) ;
     }
@@ -372,9 +379,9 @@ sub load { # Object method
                 ( defined $hotx and $hotx >= $width   ) or
                 ( defined $hoty and $hoty >= $height  ) ) {
                 carp "$err deleted invalid hotspot" ;
-                $hotx = $hoty = -1 ;
+                $hotx = $hoty = $UNSET ;
             }
-            $hotx = $hoty = -1 unless defined $hotx  ;
+            $hotx = $hoty = $UNSET unless defined $hotx  ;
             carp "$err unusually large cpp `$cpp'" if $cpp > 4 ;
             $self->{-cpp} = $cpp ; # Have to do this early as possible.
             $i     = 0 ;
@@ -425,6 +432,8 @@ sub load { # Object method
 
     close $fh or croak "load() failed to close `$file': $!" ;
 
+    push @{$self->{-extlines}}, "XPMENDEXT\n" if scalar @{$self->{-extlines}} ;
+
     $self->_set( -cpp      => $cpp ) ;
     $self->_set( -width    => $width ) ;
     $self->_set( -height   => $height ) ;
@@ -458,7 +467,7 @@ sub save { # Object method
     print $fh @{$self->get( -comments )} ;
     $line = qq{"$width $height } . $self->get( -ncolours ) . " $cpp " ; #"
     $line .= $self->get( -hotx ) . " " . $self->get( -hoty ) . " "
-    if $self->get( -hotx ) > -1 ;
+    if $self->get( -hotx ) > $UNSET ;
     $line .= $self->get( -extname ) if defined $self->get( -extname ) ;
     $line =~ s/\s+$//o ;
     print $fh qq{$line",\n}, $self->get( -commentcolour ) ; #"
@@ -731,6 +740,12 @@ use in the image).
     my $j = $i->new_from_image( ref $i, -cpp => 2 ) ;
 
 =head1 CHANGES
+
+2000/05/25
+
+Fixed a bug in the test file; fixed a bug in save() which affected xpm
+extensions.
+
 
 2000/05/04
 

@@ -8,34 +8,17 @@
 
 use strict ;
 
-use vars qw( $Loaded $Count $DEBUG $TRIMWIDTH %File ) ;
+use vars qw( $Loaded $Count $TestImage $DEBUG $TRIMWIDTH %File ) ;
 
 BEGIN { 
     $| = 1 ; 
-    my $count = 13 ;
-    %File = (
-        '/usr/lib/perl5/Tk/Camel.xpm'       => 1,
-        '/usr/lib/perl5/Tk/ColorEdit.xpm'   => 1,
-        '/usr/lib/perl5/Tk/act_folder.xpm'  => 1,
-        '/usr/lib/perl5/Tk/file.xpm'        => 1,
-        '/usr/lib/perl5/Tk/folder.xpm'      => 1,
-        '/usr/lib/perl5/Tk/openfolder.xpm'  => 1,
-        '/usr/lib/perl5/Tk/srcfile.xpm'     => 1,
-        '/usr/lib/perl5/Tk/textfile.xpm'    => 1,
-        '/usr/lib/perl5/Tk/winfolder.xpm'   => 1,
-        '/usr/lib/perl5/Tk/wintext.xpm'     => 1,
-        ) ;
-    if( -e '/usr/lib/perl5/Tk' ) {
-        foreach my $file ( keys %File ) {
-            $count += $File{$file} = -r $file ? 1 : 0 ;
-        }
-    }
-    print "1..$count\n" 
+    print "1..14\n" 
 }
 END   { print "not ok 1\n" unless $Loaded ; }
 
 use Image::Xpm ;
 $Loaded = 1 ;
+use Symbol () ;
 
 $DEBUG = 1,  shift if @ARGV and $ARGV[0] eq '-d' ;
 $TRIMWIDTH = @ARGV ? shift : 60 ;
@@ -115,23 +98,21 @@ eval {
 } ;
 report( "xy() - set", 0, $@, __LINE__ ) ;
 
-
-
-foreach my $file ( keys %File ) {
-    next unless $File{$file} ;
-    eval {
-        $j = Image::Xpm->new( -file => $file ) ;
-        my $pixels = $j->get( -pixels ) ;
-        $file =~ s/\.xpm$/.test.xpm/o ;
-        $file =~ s,.*/,/tmp/,o ;
-        $j->save( $file ) ;
-        $j->load ;
-        die "Failed to new/save/load correctly" 
-        unless $j->get( -pixels ) eq $pixels ;
-        unlink $file ;
-    } ;
-    report( "new()", 0, $@, __LINE__ ) ;
-}
+eval {
+    my $file = "$fp-test2.xpm" ;
+    my $fh = Symbol::gensym ;
+    open $fh, ">$file" or die $! ;
+    print $fh $TestImage ;
+    close $fh ;
+    $j = Image::Xpm->new( -file => $file ) ;
+    my $pixels = $j->get( -pixels ) ;
+    $file =~ s/2/3/o ;
+    $j->save( $file ) ;
+    $j->load ;
+    die "Failed to new/save/load correctly" 
+    unless $j->get( -pixels ) eq $pixels ;
+} ;
+report( "new()", 0, $@, __LINE__ ) ;
 
 # Tests for Image::Base
 
@@ -146,7 +127,7 @@ report( "new_from_image", 0, $@, __LINE__ ) ;
 
 
 
-unlink "$fp-test1.xbm" unless $DEBUG ;
+unlink( "$fp-test1.xbm", "$fp-test2.xpm", "$fp-test3.xpm" ) unless $DEBUG ;
 
 
 sub report {
@@ -182,4 +163,66 @@ sub report {
     }
 }
 
+BEGIN {
+# This image was copied from the Perl/Tk distribution.
+$TestImage = <<EOT ;
+/* XPM */
+static char * ColorEditor_xpm[] = {
+"48 48 6 1",
+" 	c #0000FFFF0000",
+".	c #FFFFFFFF0000",
+"X	c #FFFF00000000",
+"o	c #000000000000",
+"O	c #0000FFFFFFFF",
+"+	c #00000000FFFF",
+"                   . . ......X..XXXXXXXXXXXXXXXX",
+"                      . .X.X. X...XX.XXXXXXXXXXX",
+"                   .  . .  ... ...XXXXXXXXXXXXXX",
+"                .   .    .. .....XX.XXXXXXXXXXXX",
+"                    .   .X.X...XXX..XXXXXXXXXXXX",
+"                       .. .  ....X...X.XXXXXXXXX",
+"                       ..  ..X.. . ..X..XXXXXXXX",
+"                          ....  ..X.X..X.XXXXXXX",
+"                         ...  .X. X...X...XX.XXX",
+"                     .    .. ... XX...XXXX..XXXX",
+"      ooo o         ooo.   .  .. .X...X..X.XXXXX",
+"    oo   oo          oo.    . .  . .......X.X.XX",
+"    oo    o          oo   . . .. ........XX.XXXX",
+"   oo         ooo   oo   ooo Xooo.oo..... X XX.X",
+"   oo        o  oo  oo  o  oo  ooo o.. . X...X X",
+"   oo       oo  oo  oo oo  oo .oo  . X.X.....XX ",
+"O  oo     o oo  oo oo  oo  oo oo.  ...  X..... .",
+"O O oo   oo oo  o  oo ooo  o. oo     . ... .X..X",
+"O OOOooooO   ooo   ooo  ooo   oo  ... ....... X ",
+"  O OOO                         .  . ..  ...  ..",
+"OOO OOOO OO O                    . .... . . .. .",
+" +  O  O   O  O                        .. .. . .",
+"   O  OOO  OO                    .    ..   .... ",
+"OOOOO    O   OO                  .   ..  .  ... ",
+"+OOOO OOOO  OO    O                  ...   .. ..",
+" O+OO OO      O                            .    ",
+"OOOOOOOOoooooooOOOO  ooo  oo               .... ",
+"OO++ OOO ooO OoOO     oo  oo  oo           ..   ",
+"+OOOOOOOOooOOOo O O   oo      oo               .",
+"++OOO   +oo+oOO O oo oo ooo ooooo  ooo  ooo oo. ",
+"+OO O OOoooooO O o  ooo  oo  oo   o  oo  ooo o  ",
+"++++ O OooOOoO Ooo  Ooo  oo  oo  oo  oo  oo     ",
+"+++OOOO ooOOOoOOooOOooO oo  oo   oo  oo oo      ",
+"++++++ Ooo OOoOOooOooo ooo ooo o oo  o  oo      ",
+"+++O+++oooooooOOOooOoooOooo ooo  Oooo   oo      ",
+"++++++++O++OOOO   O OOOOOOO                     ",
+"++O++++O+O+OOOOOOO O O OOOOOO  O                ",
+"+++O+++OOO+OO OOOO O   OO  O O O                ",
+"++++++++O++O OO OO OO  OOO OO O   O             ",
+"+++++++++++++ OOOOOO OOOO OO OO                 ",
+"+++++++++++++O+ +O OOOO OOO  OOO OOO            ",
+"++++++++++++++ OOOOO O OOOOOOOOOO               ",
+"+++++++++++++ ++  OO  +O OOOOO O  O   O         ",
+"+++++++++++++++O+++O+O+O OOOOOOOOOO    O        ",
+"+++++++++++++O++++O++  O OOO O OOO OO           ",
+"++++++++++++++++O+++O+O+OOOO OOOO  O  OO        ",
+"+++++++++++++++++++O+++ +++O OOOOOO OO   O      ",
+"++++++++++++++++++++++ +++ O OOOOOOOOO          "};
+EOT
+}
 
