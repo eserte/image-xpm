@@ -1,11 +1,16 @@
 package Image::Xpm ;    # Documented at the __END__
 
-# $Id: Xpm.pm,v 1.6 2000/05/03 19:03:39 root Exp root $
+# $Id: Xpm.pm,v 1.12 2000/05/04 20:12:49 root Exp $
 
 use strict ;
 
-use vars qw( $VERSION ) ;
-$VERSION = '1.00' ;
+use vars qw( $VERSION @ISA ) ;
+$VERSION = '1.04' ;
+
+use Image::Base ;
+
+@ISA = qw( Image::Base ) ;
+
 
 use Carp qw( carp croak ) ;
 use Symbol () ;
@@ -52,28 +57,11 @@ use readonly
 
 ### Private methods
 #
-# _get          object
-# _set          object
+# _get          object inherited
+# _set          object inherited
 # _nextcc       object
 # _add_colour   object
 # _add_color    object
-
-sub _get { # Object method
-    my $self  = shift ;
-#    my $class = ref( $self ) || $self ;
-   
-    $self->{shift()} ;
-}
-
-
-sub _set { # Object method
-    my $self  = shift ;
-#    my $class = ref( $self ) || $self ;
-    
-    my $field = shift ;
-
-    $self->{$field} = shift ;
-}
 
 
 sub _nextcc { # Object method
@@ -187,16 +175,7 @@ sub new { # Class and object method
 }
 
 
-sub get { # Object method 
-    my $self  = shift ;
-#    my $class = ref( $self ) || $self ;
-  
-    my @result ;
-
-    push @result, $self->_get( shift() ) while @_ ;
-
-    wantarray ? @result : shift @result ;
-}
+# get() is inherited
 
 
 sub set { # Object method 
@@ -229,10 +208,15 @@ sub xy { # Object method
     my( $x, $y, $colour ) = @_ ; 
 
     # xy() is common so we can't afford the expense of method calls
-    substr( $self->{-pixels}, 
-        ( $y * $self->{-width} * $self->{-cpp} ) + ( $x * $self->{-cpp} ), 
-        $self->{-cpp} ) = 
-            $self->{-cindex}{lc $colour} || $self->_add_colour( $colour ) ;
+    defined $colour ?
+        substr( $self->{-pixels}, 
+            ( $y * $self->{-width} * $self->{-cpp} ) + ( $x * $self->{-cpp} ), 
+            $self->{-cpp} ) = 
+                $self->{-cindex}{lc $colour} || $self->_add_colour( $colour ) :
+        $self->{-palette}{
+            substr( $self->{-pixels}, 
+                ( $y * $self->{-width} * $self->{-cpp} ) + ( $x * $self->{-cpp} ), 
+                $self->{-cpp} )}{c} ; 
 }
 
 
@@ -242,8 +226,10 @@ sub vec { # Object method
 
     my( $offset, $colour ) = @_ ; 
 
-    substr( $self->{-pixels}, $offset, $self->{-cpp} ) = 
-        $self->{-cindex}{lc $colour} || $self->_add_colour( $colour ) ;
+    defined $colour ?
+        substr( $self->{-pixels}, $offset, $self->{-cpp} ) = 
+            $self->{-cindex}{lc $colour} || $self->_add_colour( $colour ) :
+        $self->{-palette}{substr( $self->{-pixels}, $offset, $self->{-cpp} )}{c} ;
 }
 
 
@@ -312,6 +298,14 @@ sub load { # Object method
 
     open $fh, $file or croak "load() failed to open `$file': $!" ;
 
+    $self->{-palette}       = {} ;
+    $self->{-cindex}        = {} ;
+    $self->{-comments}      = [] ;
+    $self->{-extlines}      = [] ;
+    $self->{-pixels}        = '' ;
+    $self->{-commentpixel}  = '' ;
+    $self->{-commentcolour} = '' ;
+
     LINE:
     while( <$fh> ) {
         # Blank lines
@@ -378,13 +372,14 @@ sub load { # Object method
             }
             $hotx = $hoty = -1 unless defined $hotx  ;
             carp "$err unusually large cpp `$cpp'" if $cpp > 4 ;
+            $self->{-cpp} = $cpp ; # Have to do this early as possible.
             $i     = 0 ;
             $state = $STATE_COLOURS ;
             next LINE ;
         }
         # Colour palette
         if( $state == $STATE_COLOURS ) {
-            /"(.{$cpp})/o ; #"
+            /"(.{$cpp})/ ; #" No /o since this can vary between images!
             my $cc   = $1 ;
             my %pair = /\s+(m|s|g4|g|c)\s+(#[A-Fa-f\d]{3,}|\w+)/go ;
             $self->{-cindex}{lc $pair{'c'}} = $cc if exists $pair{'c'} ;
@@ -447,7 +442,7 @@ sub save { # Object method
     $self->set( '-file', $file ) ;
 
     my( $width, $height, $cpp ) = $self->get( '-width', '-height', '-cpp' ) ;
-
+    my $line ;
     my $fh = Symbol::gensym ;
     open $fh, ">$file" or croak "save() failed to open `$file': $!" ;
 
@@ -457,27 +452,31 @@ sub save { # Object method
 
     print $fh "/* XPM */\nstatic char *", $file, "[] = {\n" ; 
     print $fh @{$self->get( -comments )} ;
-    print $fh qq{"$width $height }, $self->get( -ncolours ), " $cpp " ; #"
-    print $fh $self->get( -hotx ), " ", $self->get( -hoty ), " "
+    $line = qq{"$width $height } . $self->get( -ncolours ) . " $cpp " ; #"
+    $line .= $self->get( -hotx ) . " " . $self->get( -hoty ) . " "
     if $self->get( -hotx ) > -1 ;
-    print $fh $self->get( -extname ) if defined $self->get( -extname ) ;
-    print $fh qq{",\n}, $self->get( -commentcolour ) ; #"
+    $line .= $self->get( -extname ) if defined $self->get( -extname ) ;
+    $line =~ s/\s+$//o ;
+    print $fh qq{$line",\n}, $self->get( -commentcolour ) ; #"
 
     while( my( $cc, $pairs ) = each ( %{$self->{-palette}} ) ) {
-        print $fh qq{"$cc } ; #"
+        $line = qq{"$cc } ; #"
         foreach my $key ( sort keys %{$pairs} ) {
-            print $fh "$key $pairs->{$key} " ;
+            $line .= "$key $pairs->{$key} " ;
         }
-        print $fh qq{",\n} ; #"
+        $line =~ s/\s+$//o ;
+        print $fh qq{$line",\n} ; #"
     }
 
     print $fh $self->get( -commentpixel ) ;
 
+    my $comma = ',' ;
     for( my $y = 0 ; $y < $height ; $y++ ) {
+        $comma = '' if $y == $height - 1 ;
         print $fh 
             '"', 
             substr( $self->{-pixels}, $y * $width * $cpp, $width * $cpp ),
-            qq{",\n} ; #"
+            qq{"$comma\n} ; #"
     }
 
     print $fh @{$self->get( -extlines )}, "} ;\n" ;
@@ -526,6 +525,12 @@ Image::Xpm - Load, create, manipulate and save xpm image files.
 
 =head1 DESCRIPTION
 
+This class module provides basic load, manipulate and save functionality for
+the xpm file format. It inherits from C<Image::Base> which provides additional
+manipulation functionality, e.g. C<new_from_image()>. See the C<Image::Base>
+pod for information on adding your own functionality to all the Image::Base
+derived classes.
+
 =head2 new()
 
     my $i = Image::Xpm->new( -file => 'test.xpm' ) ;
@@ -567,26 +572,7 @@ read-only.
 Characters per pixel. Commonly 1 or 2, default is 1 for images created by the
 module; read-only.
 
-If we wanted to change an image's -cpp we could do this: 
-
-    my $orig = Image::Xpm( -file => 'orig.xpm' ) ;
-    # $orig is assumed to have -cpp != 2.
-    my $new  = Image::Xpm(
-                -width  => $orig->get( -width ),
-                -height => $orig->get( -height ),
-                -cpp    => 2,
-                ) ;
-    for( my $x = 0 ; $x < $orig->get( -width ) ; $x++ ) {
-        for( my $y = 0 ; $y < $orig->get( -height ) ; $y++ ) {
-            $new->xy( $x, $y, $orig->xy( $x, $y ) ) ;
-        }
-    }
-    $new->save( 'orig2cpp.xpm' ) ;
-
-Note that it is possible to change from a higher -cpp to a lower -cpp,
-providing there are enough possible character combinations to represent the
-palette (which may be the case as often the palette contains more colours than
-are actually used).
+See the example for how to change an image's cpp.
 
 =item C<-hotx>
 
@@ -667,6 +653,15 @@ See C<xy> and C<vec> to get/set colours of the image itself.
 Get/set colours using x, y coordinates; coordinates start at 0. If the colour
 does not exist in the palette it will be added automatically.
 
+When called to set the colour the value returned is characters used for that
+colour in the palette; when called to get the colour the value returned is the
+colour name, e.g. 'blue' or '#f0f0f0', etc, e.g.
+
+    $colour = xy( $x, $y ) ;            # e.g. #123456 
+    $cc     = xy( $x, $y, $colour ) ;   # e.g. !
+
+We don't normally pick up the return value when setting the colour.
+
 =head2 vec()
 
     $i->vec( 43, 0 ) ;      # Unset the bit at offset 43
@@ -674,6 +669,9 @@ does not exist in the palette it will be added automatically.
 
 Get/set bits using vector offsets; offsets start at 0. The offset of a pixel
 is ( ( y * width * cpp ) + ( x * cpp ) ).
+
+The sort of return value depends on whether we are reading (getting) or
+writing (setting) the colour - see C<xy> for an explanation.
 
 =head2 rgb2colour() and rgb2color()
     
@@ -723,30 +721,22 @@ use in the image).
 
 =head1 EXAMPLE
 
-We do not provide any graphical transformations; you are expected to inherit
-or aggregate the relevant classes and provide your own. Below is an example of
-copying an image from xbm format to xpm:
+=head2 Changing the -cpp of an image:
 
-    use Image::Xbm ;
-    use Image::Xpm ;
+    my $i = Image::Xpm( -file => 'test1.xpm' ) ; # test1.xpm has cpp == 1
+    my $j = $i->new_from_image( 'Image::xpm', -cpp => 2 ) ;
+    $j->save( 'test2.xpm' ) ;
 
-    my $orig = Image::Xbm->new( -file => 'orig.xbm' ) ;
-    my $new  = Image::Xpm->new( 
-                -width  => $orig->get( -width ), 
-                -height => $orig->get( -height ), 
-                ) ;
-    my( $setcolour, $unsetcolour ) = qw( black white ) ;
-
-    for( my $x = 0 ; $x < $orig->get( -width ) ; $x++ ) {
-        for( my $y = 0 ; $y < $orig->get( -height ) ; $y++ ) {
-            $new->xy( $x, $y, $orig->xy( $x, $y ) ? $setcolour : $unsetcolour ) ;
-        }
-    }
-
-    $new->save( 'new.xpm' ) ;
-
+    # Could have written 2nd line above as:
+    my $j = $i->new_from_image( ref $i, -cpp => 2 ) ;
 
 =head1 CHANGES
+
+2000/05/04
+
+Fixed bugs in xy(), vec(), save() and load(). 
+Improved the test program.
+
 
 2000/05/03 
 

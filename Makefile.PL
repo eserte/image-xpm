@@ -15,6 +15,9 @@ WriteMakefile(
     'LIBS'         => [''],   # e.g., '-lm'
     'DEFINE'       => '',     # e.g., '-DHAVE_SOMETHING'
     'INC'          => '',     # e.g., '-I/usr/include/other'
-    'PREREQ_PM'    => { readonly => 1.04 },
+    'PREREQ_PM'    => { 
+                        'Image::Base' => '1.00',
+                        readonly      => '1.04', 
+                      },
     'dist'         => { COMPRESS => "gzip -9", SUFFIX => "gz" },
 ) ;

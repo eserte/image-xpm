@@ -33,6 +33,12 @@ Image::Xpm - Load, create, manipulate and save xpm image files.
 
 =head1 DESCRIPTION
 
+This class module provides basic load, manipulate and save functionality for
+the xpm file format. It inherits from C<Image::Base> which provides additional
+manipulation functionality, e.g. C<new_from_image()>. See the C<Image::Base>
+pod for information on adding your own functionality to all the Image::Base
+derived classes.
+
 =head2 new()
 
     my $i = Image::Xpm->new( -file => 'test.xpm' ) ;
@@ -74,26 +80,7 @@ read-only.
 Characters per pixel. Commonly 1 or 2, default is 1 for images created by the
 module; read-only.
 
-If we wanted to change an image's -cpp we could do this: 
-
-    my $orig = Image::Xpm( -file => 'orig.xpm' ) ;
-    # $orig is assumed to have -cpp != 2.
-    my $new  = Image::Xpm(
-                -width  => $orig->get( -width ),
-                -height => $orig->get( -height ),
-                -cpp    => 2,
-                ) ;
-    for( my $x = 0 ; $x < $orig->get( -width ) ; $x++ ) {
-        for( my $y = 0 ; $y < $orig->get( -height ) ; $y++ ) {
-            $new->xy( $x, $y, $orig->xy( $x, $y ) ) ;
-        }
-    }
-    $new->save( 'orig2cpp.xpm' ) ;
-
-Note that it is possible to change from a higher -cpp to a lower -cpp,
-providing there are enough possible character combinations to represent the
-palette (which may be the case as often the palette contains more colours than
-are actually used).
+See the example for how to change an image's cpp.
 
 =item C<-hotx>
 
@@ -174,6 +161,15 @@ See C<xy> and C<vec> to get/set colours of the image itself.
 Get/set colours using x, y coordinates; coordinates start at 0. If the colour
 does not exist in the palette it will be added automatically.
 
+When called to set the colour the value returned is characters used for that
+colour in the palette; when called to get the colour the value returned is the
+colour name, e.g. 'blue' or '#f0f0f0', etc, e.g.
+
+    $colour = xy( $x, $y ) ;            # e.g. #123456 
+    $cc     = xy( $x, $y, $colour ) ;   # e.g. !
+
+We don't normally pick up the return value when setting the colour.
+
 =head2 vec()
 
     $i->vec( 43, 0 ) ;      # Unset the bit at offset 43
@@ -181,6 +177,9 @@ does not exist in the palette it will be added automatically.
 
 Get/set bits using vector offsets; offsets start at 0. The offset of a pixel
 is ( ( y * width * cpp ) + ( x * cpp ) ).
+
+The sort of return value depends on whether we are reading (getting) or
+writing (setting) the colour - see C<xy> for an explanation.
 
 =head2 rgb2colour() and rgb2color()
     
@@ -230,30 +229,22 @@ use in the image).
 
 =head1 EXAMPLE
 
-We do not provide any graphical transformations; you are expected to inherit
-or aggregate the relevant classes and provide your own. Below is an example of
-copying an image from xbm format to xpm:
+=head2 Changing the -cpp of an image:
 
-    use Image::Xbm ;
-    use Image::Xpm ;
+    my $i = Image::Xpm( -file => 'test1.xpm' ) ; # test1.xpm has cpp == 1
+    my $j = $i->new_from_image( 'Image::xpm', -cpp => 2 ) ;
+    $j->save( 'test2.xpm' ) ;
 
-    my $orig = Image::Xbm->new( -file => 'orig.xbm' ) ;
-    my $new  = Image::Xpm->new( 
-                -width  => $orig->get( -width ), 
-                -height => $orig->get( -height ), 
-                ) ;
-    my( $setcolour, $unsetcolour ) = qw( black white ) ;
-
-    for( my $x = 0 ; $x < $orig->get( -width ) ; $x++ ) {
-        for( my $y = 0 ; $y < $orig->get( -height ) ; $y++ ) {
-            $new->xy( $x, $y, $orig->xy( $x, $y ) ? $setcolour : $unsetcolour ) ;
-        }
-    }
-
-    $new->save( 'new.xpm' ) ;
-
+    # Could have written 2nd line above as:
+    my $j = $i->new_from_image( ref $i, -cpp => 2 ) ;
 
 =head1 CHANGES
+
+2000/05/04
+
+Fixed bugs in xy(), vec(), save() and load(). 
+Improved the test program.
+
 
 2000/05/03 
 

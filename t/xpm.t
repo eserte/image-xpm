@@ -8,9 +8,30 @@
 
 use strict ;
 
-use vars qw( $Loaded $Count $DEBUG $TRIMWIDTH ) ;
+use vars qw( $Loaded $Count $DEBUG $TRIMWIDTH %File ) ;
 
-BEGIN { $| = 1 ; print "1..8\n" }
+BEGIN { 
+    $| = 1 ; 
+    my $count = 13 ;
+    %File = (
+        '/usr/lib/perl5/Tk/Camel.xpm'       => 1,
+        '/usr/lib/perl5/Tk/ColorEdit.xpm'   => 1,
+        '/usr/lib/perl5/Tk/act_folder.xpm'  => 1,
+        '/usr/lib/perl5/Tk/file.xpm'        => 1,
+        '/usr/lib/perl5/Tk/folder.xpm'      => 1,
+        '/usr/lib/perl5/Tk/openfolder.xpm'  => 1,
+        '/usr/lib/perl5/Tk/srcfile.xpm'     => 1,
+        '/usr/lib/perl5/Tk/textfile.xpm'    => 1,
+        '/usr/lib/perl5/Tk/winfolder.xpm'   => 1,
+        '/usr/lib/perl5/Tk/wintext.xpm'     => 1,
+        ) ;
+    if( -e '/usr/lib/perl5/Tk' ) {
+        foreach my $file ( keys %File ) {
+            $count += $File{$file} = -r $file ? 1 : 0 ;
+        }
+    }
+    print "1..$count\n" 
+}
 END   { print "not ok 1\n" unless $Loaded ; }
 
 use Image::Xpm ;
@@ -74,8 +95,59 @@ eval {
 } ;
 report( "get()", 0, $@, __LINE__ ) ;
 
+eval {
+    die "xy(0,0) ne #000000" unless $i->xy( 0, 0 ) eq '#000000';
+} ;
+report( "xy() - get", 0, $@, __LINE__ ) ;
 
-unlink "$fp-test1.xbm" ;
+eval {
+    die "xy(1,2) ne #01e002" unless $i->xy( 1, 2 ) eq '#01e002';
+} ;
+report( "xy() - get", 0, $@, __LINE__ ) ;
+
+eval {
+    die "xy(3,1) ne #00f003" unless $i->xy( 3, 1 ) eq '#00f003';
+} ;
+report( "xy() - get", 0, $@, __LINE__ ) ;
+
+eval {
+    die "xy(3,1,'violet') ne 4" unless $i->xy( 3, 1, 'violet' ) eq '4';
+} ;
+report( "xy() - set", 0, $@, __LINE__ ) ;
+
+
+
+foreach my $file ( keys %File ) {
+    next unless $File{$file} ;
+    eval {
+        $j = Image::Xpm->new( -file => $file ) ;
+        my $pixels = $j->get( -pixels ) ;
+        $file =~ s/\.xpm$/.test.xpm/o ;
+        $file =~ s,.*/,/tmp/,o ;
+        $j->save( $file ) ;
+        $j->load ;
+        die "Failed to new/save/load correctly" 
+        unless $j->get( -pixels ) eq $pixels ;
+        unlink $file ;
+    } ;
+    report( "new()", 0, $@, __LINE__ ) ;
+}
+
+# Tests for Image::Base
+
+eval {
+    my $q = $i->new_from_image( ref $i, -cpp => 2 ) ;
+    my $pixels = $q->get( -pixels ) ;
+    $pixels =~ s/ //go ;
+    $pixels =~ s/0/4/go ; # One colour was in the palette but unused (overwritten)
+    die unless $pixels eq $i->get( -pixels ) ;
+} ;
+report( "new_from_image", 0, $@, __LINE__ ) ;
+
+
+
+unlink "$fp-test1.xbm" unless $DEBUG ;
+
 
 sub report {
     my $test = shift ;
