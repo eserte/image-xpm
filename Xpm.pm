@@ -448,7 +448,9 @@ sub load { # Object method
         }
         # Finish
         if ($state == $STATE_FINISH) {
-            croak "$err invalid ending" unless /\}\s*;/;
+## The ending brace could also happened in the line before. So don't
+## do any checks anymore here.
+#            croak "$err invalid ending" unless /\}\s*;/;
             last LINE;
         }
     }
