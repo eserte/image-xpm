@@ -389,7 +389,7 @@ sub load { # Object method
         if ($state == $STATE_VALUES) {
             ($width, $height, $ncolours, $cpp, $hotx, $hoty, $extname) =
             /"\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)
-                 (?:\s+(\d+)\s+(\d+))?(?:\s+(\w+))?\s*"/ox;
+                 (?:\s+(-?\d+)\s+(-?\d+))?(?:\s+(\w+))?\s*"/ox;
             croak "$err missing width"            unless defined $width;
             croak "$err missing height"           unless defined $height;
             croak "$err missing ncolours"         unless defined $ncolours;
