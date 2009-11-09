@@ -17,4 +17,10 @@ WriteMakefile(
     'INC'          => '',     # e.g., '-I/usr/include/other'
     'PREREQ_PM'    => { 'Image::Base' => '1.06', },
     'dist'         => { COMPRESS => "gzip -9", SUFFIX => "gz" },
+    ($ExtUtils::MakeMaker::VERSION >= 6.54 ?
+      (META_ADD => { resources => { repository => 'git://github.com/eserte/image-xpm.git' },
+		     author => ['Mark Summerfield <summer@perlpress.com>',
+				'Slaven Rezic <srezic@cpan.org',
+			       ],
+		   }) : ()),
 ) ;
