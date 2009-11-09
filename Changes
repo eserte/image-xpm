@@ -1,0 +1,36 @@
+Revision history for Perl extension Image::Xpm.
+
+1.10
+	- fix for RT bugs 51053 and 51212: allow other formats of
+	  C array declaration
+	- fix for RT bug 51211: handle non-standard end of file
+	- fix for RT bug 7438: new(-file => $ref) was broken
+	- more tests
+	- new maintainer
+
+2000/11/09
+
+Added Jerrad Pierce's patch to allow load() to accept filehandles or strings;
+will document in next release.
+
+
+2000/10/19
+
+Fixed bugs in xy() and vec() reported by Pat Gunn.
+
+
+2000/05/25
+
+Fixed a bug in the test file; fixed a bug in save() which affected xpm
+extensions.
+
+
+2000/05/04
+
+Fixed bugs in xy(), vec(), save() and load(). 
+Improved the test program.
+
+
+2000/05/03 
+
+Created. 

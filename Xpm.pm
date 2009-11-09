@@ -773,35 +773,6 @@ use in the image).
     # Could have written 2nd line above as:
     my $j = $i->new_from_image(ref $i, -cpp => 2);
 
-=head1 CHANGES
-
-2000/11/09
-
-Added Jerrad Pierce's patch to allow load() to accept filehandles or strings;
-will document in next release.
-
-
-2000/10/19
-
-Fixed bugs in xy() and vec() reported by Pat Gunn.
-
-
-2000/05/25
-
-Fixed a bug in the test file; fixed a bug in save() which affected xpm
-extensions.
-
-
-2000/05/04
-
-Fixed bugs in xy(), vec(), save() and load(). 
-Improved the test program.
-
-
-2000/05/03 
-
-Created. 
-
 =head1 AUTHOR
 
 Mark Summerfield. I can be contacted as <summer@perlpress.com> -

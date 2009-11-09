@@ -1,6 +1,7 @@
-Xpm.pm
+Changes
+Makefile.PL
+MANIFEST
+README
 t/const.t
 t/xpm.t
-MANIFEST
-Makefile.PL
-README
+Xpm.pm
