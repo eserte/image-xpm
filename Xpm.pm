@@ -324,8 +324,13 @@ sub load { # Object method
         open $fh, $file or croak "load() failed to open `$file': $!" ;
     }
     elsif( ref($file) eq 'SCALAR' ) {
-        require IO::String;
-        $fh = IO::String->new( $$file );
+	if( $] >= 5.008 ) {
+	    open $fh, "<", $file or croak "cannot handle scalar value: $!";
+	}
+	else {
+	    require IO::String;
+	    $fh = IO::String->new( $$file );
+	}
     }
     else {
         seek($file, 0, 0) or croak "load() can't rewind handle for `$file': $!";
