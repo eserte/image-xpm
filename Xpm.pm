@@ -167,8 +167,9 @@ sub new { # Class and object method
     $self->{-cc} = ' ' x $self->{-cpp};
 
     my $file = $self->get('-file');
-    $self->load if defined $file and -r $file and not $self->{-pixels};
-
+    if (defined $file and not $self->{-pixels}) {
+    	$self->load if ref $file or -r $file;
+    }
     croak "new() `$file' not found or unreadable" 
     if defined $file and not defined $self->get('-width');
 
