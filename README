@@ -1,278 +1,33 @@
-=head1 NAME
+Image::Xpm
+==========
 
-Image::Xpm - Load, create, manipulate and save xpm image files.
+Image::Xpm is a Perl module for loading, creating, manipulating and
+saving xpm image files.
 
-=head1 SYNOPSIS
+INSTALLATION
+------------
 
-    use Image::Xpm;
+To install this module type the following:
 
-    my $j = Image::Xpm->new(-file, 'Camel.xpm');
+   perl Makefile.PL
+   make
+   make test
+   make install
 
-    my $i = Image::Xpm->new(-width => 10, -height => 16);
+Or with modern CPAN.pm ($CPAN::VERSION >= 1.88_55) just:
 
-    my $h = $i->new; # Copy of $i
+   cpan .
 
-    $i->xy(5, 8, 'red');       # Set a colour (& add to palette if necessary)
-    print $i->xy(9, 3);        # Get a colour
+AUTHOR
+------
 
-    $i->xy(120, 130, '#1256DD');
-    $i->xy(120, 130, $i->rgb2colour(66, 0x4D, 31));
+Mark Summerfield <summer@perlpress.com>
 
-    $i->vec(24, '#808080');    # Set a colour using a vector offset
-    print $i->vec(24);         # Get a colour using a vector offset
+Current maintainer is Slaven Rezic <srezic@cpan.org>
 
-    print $i->get(-width);     # Get and set object attributes
-    $i->set(-height, 15);
-
-    $i->load('test.xpm');
-    $i->save;
-
-    # Changing just the palette
-    $i->add_colours(qw(red green blue #123456 #C0C0C0));
-    $i->del_colour('blue');
-
-=head1 DESCRIPTION
-
-This class module provides basic load, manipulate and save functionality for
-the xpm file format. It inherits from C<Image::Base> which provides additional
-manipulation functionality, e.g. C<new_from_image()>. See the C<Image::Base>
-pod for information on adding your own functionality to all the Image::Base
-derived classes.
-
-=head2 new()
-
-    my $i = Image::Xpm->new(-file => 'test.xpm');
-    my $j = Image::Xpm->new(-width => 12, -height => 18);
-    my $k = $i->new;
-
-We can create a new xpm image by reading in a file, or by creating an image
-from scratch (all the pixels are white by default), or by copying an image
-object that we created earlier.
-
-If we set C<-file> then all the other arguments are ignored (since they're
-taken from the file). If we don't specify a file, C<-width> and C<-height> are
-mandatory and C<-cpp> will default to 1 unless specified otherwise.
-
-=over
-
-=item C<-file>
-
-The name of the file to read when creating the image. May contain a full path.
-This is also the default name used for C<load>ing and C<save>ing, though it
-can be overridden when you load or save.
-
-=item C<-width>
-
-The width of the image; taken from the file or set when the object is created;
-read-only.
-
-=item C<-height>
-
-The height of the image; taken from the file or set when the object is created;
-read-only.
-
-=item C<-cpp>
-
-Characters per pixel. Commonly 1 or 2, default is 1 for images created by the
-module; read-only.
-
-See the example for how to change an image's cpp.
-
-=item C<-hotx>
-
-The x-coord of the image's hotspot; taken from the file or set when the object
-is created. Set to -1 if there is no hotspot.
-
-=item C<-hoty>
-
-The y-coord of the image's hotspot; taken from the file or set when the object
-is created. Set to -1 if there is no hotspot.
-
-=item C<-ncolours>
-
-The number of unique colours in the palette. The image may not be using all
-of them; read-only.
-
-=item C<-cindex>
-
-An hash whose keys are colour names, e.g. '#123456' or 'blue' and whose values
-are the palette names, e.g. ' ', '#', etc; read-only. If you want to add more
-colours to the image itself simply write pixels with the new colours using
-C<xy>; if you want to add more colours to the palette without necessarily
-using them in the image use C<add_colours>.
-
-=item C<-palette>
-
-A hash whose keys are the palette names, e.g. ' ', '#', etc. and whose values
-are hashes of colour type x colour name pairs, e.g. C<c =E<gt> red>, etc;
-read-only. If you want to add more colours to the image itself simply write
-pixels with the new colours using C<xy>; if you want to add more colours to
-the palette without necessarily using them in the image use C<add_colours>.
-
-=item C<-pixels>
-
-A string of palette names which constitutes the data for the image itself;
-read-only.
-
-=item C<-extname>
-
-The name of the extension text if any; commonly XPMEXT; read-only.
-
-=item C<-extlines>
-
-The lines of text of any extensions; read-only.
-
-=item C<-comments>
-
-An array (possibly empty) of comment lines that were in a file that was read
-in; they will be written out although we make no guarantee regarding their
-placement; read-only.
-
-=back
-
-=head2 get()
-    
-    my $width = $i->get(-width);
-    my ($hotx, $hoty) = $i->get(-hotx, -hoty);
-
-Get any of the object's attributes. Multiple attributes may be requested in a
-single call.
-
-See C<xy> and C<vec> to get/set colours of the image itself.
-
-=head2 set()
-
-    $i->set(-hotx => 120, -hoty => 32);
-
-Set any of the object's attributes. Multiple attributes may be set in a single
-call; some attributes are read-only.
-
-See C<xy> and C<vec> to get/set colours of the image itself.
-
-=head2 xy()
-
-    $i->xy(4, 11, '#123454');    # Set the colour at point 4,11
-    my $v = $i->xy(9, 17);       # Get the colour at point 9,17
-
-Get/set colours using x, y coordinates; coordinates start at 0. If the colour
-does not exist in the palette it will be added automatically.
-
-When called to set the colour the value returned is characters used for that
-colour in the palette; when called to get the colour the value returned is the
-colour name, e.g. 'blue' or '#f0f0f0', etc, e.g.
-
-    $colour = xy($x, $y);            # e.g. #123456 
-    $cc     = xy($x, $y, $colour);   # e.g. !
-
-We don't normally pick up the return value when setting the colour.
-
-=head2 vec()
-
-    $i->vec(43, 0);      # Unset the bit at offset 43
-    my $v = $i->vec(87); # Get the bit at offset 87
-
-Get/set bits using vector offsets; offsets start at 0. The offset of a pixel
-is ((y * width * cpp) + (x * cpp)).
-
-The sort of return value depends on whether we are reading (getting) or
-writing (setting) the colour - see C<xy> for an explanation.
-
-=head2 rgb2colour() and rgb2color()
-    
-    $i->rgb2colour(0xff, 0x40, 0x80);    # Returns #ff4080
-    Image::Xpm->rgb2colour(10, 20, 30);  # Returns #0a141e
-
-Convenience class or object methods which accept three integers and return a
-colour name string.
-
-=head2 load()
-
-    $i->load;
-    $i->load('test.xpm');
-
-Load the image whose name is given, or if none is given load the image whose
-name is in the C<-file> attribute.
-
-=head2 save()
-
-    $i->save;
-    $i->save('test.xpm');
-
-Save the image using the name given, or if none is given save the image using
-the name in the C<-file> attribute. The image is saved in xpm format.
-
-=head2 add_colours() and add_colors()
-
-    $i->add_colours(qw(#C0C0DD red blue #123456));
-
-These are for adding colours to the palette; you don't need to use them to set
-a pixel's colour - use C<xy> for that.
-
-Add one or more colour names either as hex strings or as literal colour names.
-These are always added as type 'c' colours; duplicates are ignored.
-
-NB If you just want to set some pixels in colours that may not be in the
-palette, simply do so using C<xy> since new colours are added automatically.
-
-=head2 del_colour() and del_color()
-
-    $i->del_colour('green');
-
-Delete a colour from the palette; returns undef if the colour isn't in the
-palette, false (0) if the colour is in the palette but also in the image, or
-true (1) if the colour has been deleted (i.e. it was in the palette but not in
-use in the image).
-
-=head1 EXAMPLE
-
-=head2 Changing the -cpp of an image:
-
-    my $i = Image::Xpm(-file => 'test1.xpm'); # test1.xpm has cpp == 1
-    my $j = $i->new_from_image('Image::xpm', -cpp => 2);
-    $j->save('test2.xpm');
-
-    # Could have written 2nd line above as:
-    my $j = $i->new_from_image(ref $i, -cpp => 2);
-
-=head1 CHANGES
-
-2000/11/09
-
-Added Jerrad Pierce's patch to allow load() to accept filehandles or strings;
-will document in next release.
-
-
-2000/10/19
-
-Fixed bugs in xy() and vec() reported by Pat Gunn.
-
-
-2000/05/25
-
-Fixed a bug in the test file; fixed a bug in save() which affected xpm
-extensions.
-
-
-2000/05/04
-
-Fixed bugs in xy(), vec(), save() and load(). 
-Improved the test program.
-
-
-2000/05/03 
-
-Created. 
-
-=head1 AUTHOR
-
-Mark Summerfield. I can be contacted as <summer@perlpress.com> -
-please include the word 'xpm' in the subject line.
-
-=head1 COPYRIGHT
+COPYRIGHT
+---------
 
 Copyright (c) Mark Summerfield 2000. All Rights Reserved.
 
 This module may be used/distributed/modified under the GPL. 
-
-=cut
-
