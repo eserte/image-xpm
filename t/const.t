@@ -10,7 +10,7 @@ BEGIN {
     }
 }
 
-plan tests => 2;
+plan tests => 8;
 
 use Image::Xpm;
 
@@ -38,7 +38,26 @@ static const char* noname[] = {
 };
 EOT
 
-my $xpm = Image::Xpm->new(-width => 0, -height => 0);
-$xpm->load(\$TestImage);
-is($xpm->get('-width'), 4, 'Image with static const char loaded');
-is($xpm->get('-height'), 10);
+(my $TestImage_negative_hotspot = $TestImage) =~ s{("4 10 4 1)(",)}{$1 -1 -1$2};
+die if $TestImage eq $TestImage_negative_hotspot;
+
+{ # new() and separate load() step
+    my $xpm = Image::Xpm->new(-width => 0, -height => 0);
+    $xpm->load(\$TestImage);
+    is($xpm->get('-width'), 4, 'Image with static const char loaded');
+    is($xpm->get('-height'), 10);
+}
+
+{ # new() with -file
+    my $xpm = Image::Xpm->new(-width => 0, -height => 0, -file => \$TestImage);
+    is($xpm->get('-width'), 4, 'Image with static const char loaded');
+    is($xpm->get('-height'), 10);
+}
+
+{ # hotspot: -1, -1
+    my $xpm = Image::Xpm->new(-width => 0, -height => 0, -file => \$TestImage_negative_hotspot);
+    is($xpm->get('-width'), 4, 'Image with static const char loaded');
+    is($xpm->get('-height'), 10);
+    is($xpm->get('-hotx'), -1, 'Negative hotspot');
+    is($xpm->get('-hoty'), -1);
+}
