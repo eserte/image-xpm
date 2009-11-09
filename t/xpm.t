@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
 
-# $Id$
-
 # Copyright (c) 2000 Mark Summerfield. All Rights Reserved.
 # May be used/distributed under the GPL.
 

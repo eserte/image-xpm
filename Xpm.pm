@@ -1,11 +1,9 @@
 package Image::Xpm;    # Documented at the __END__
 
-# $Id: Xpm.pm,v 1.17 2000/11/09 19:05:31 mark Exp mark $
-
 use strict;
 
 use vars qw($VERSION @ISA);
-$VERSION = '1.10';
+$VERSION = '1.09_50';
 
 use Image::Base;
 
