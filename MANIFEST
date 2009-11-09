@@ -1,4 +1,5 @@
 Xpm.pm
+t/const.t
 t/xpm.t
 MANIFEST
 Makefile.PL

@@ -5,7 +5,7 @@ package Image::Xpm;    # Documented at the __END__
 use strict;
 
 use vars qw($VERSION @ISA);
-$VERSION = '1.09';
+$VERSION = '1.10';
 
 use Image::Base;
 
@@ -380,8 +380,11 @@ sub load { # Object method
         }
         # Name of C string
         if ($state == $STATE_ARRAY) {
-            croak "$err does not have a proper C array name"
-            unless /static\s+char\s+\*\s*\w+\[\s*\]\s*=\s*\{/o; #}
+## While this line is specified in the xpm.ps document, the libXpm
+## library itself seems to ignore the contents of this line
+## completely. So Image::Xpm should also do.
+#            croak "$err does not have a proper C array name"
+#            unless /static\s+(?:const\s+)?char\s*\*\s*(?:const\s+)?[A-Za-z0-9_-]+\s*\[\s*\]\s*=\s*\{/o; #}
             $state = $STATE_VALUES;
             next LINE;
         }
