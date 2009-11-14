@@ -1,5 +1,8 @@
 Revision history for Perl extension Image::Xpm.
 
+1.10
+	- no changes, just a non-developer release
+
 1.09_50
 	- fix for RT bugs 51053 and 51212: allow other formats of
 	  C array declaration
