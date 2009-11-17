@@ -324,7 +324,8 @@ sub load { # Object method
     }
     elsif( ref($file) eq 'SCALAR' ) {
 	if( $] >= 5.008 ) {
-	    open $fh, "<", $file or croak "cannot handle scalar value: $!";
+	    eval q{ open $fh, "<", $file } # avoid syntax error with pre-5.6 perls
+		or croak "cannot handle scalar value: $!";
 	}
 	else {
 	    require IO::String;
