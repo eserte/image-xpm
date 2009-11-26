@@ -16,7 +16,7 @@ WriteMakefile(
     'DEFINE'       => '',     # e.g., '-DHAVE_SOMETHING'
     'INC'          => '',     # e.g., '-I/usr/include/other'
     'PREREQ_PM'    => { 'Image::Base' => '1.06',
-			($] < 5.008 ? ('IO::String' => 0) : ()),
+			($] < 5.008001 ? ('IO::String' => 0) : ()),
 		      },
     'dist'         => { COMPRESS => "gzip -9", SUFFIX => "gz" },
     ($ExtUtils::MakeMaker::VERSION >= 6.54 ?

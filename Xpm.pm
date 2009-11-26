@@ -3,7 +3,7 @@ package Image::Xpm;    # Documented at the __END__
 use strict;
 
 use vars qw($VERSION @ISA);
-$VERSION = '1.10';
+$VERSION = '1.11';
 
 use Image::Base;
 
@@ -323,7 +323,7 @@ sub load { # Object method
         open $fh, $file or croak "load() failed to open `$file': $!" ;
     }
     elsif( ref($file) eq 'SCALAR' ) {
-	if( $] >= 5.008 ) {
+	if( $] >= 5.008001 ) { # 5.8.0 dumps core when using "scalar open"
 	    eval q{ open $fh, "<", $file } # avoid syntax error with pre-5.6 perls
 		or croak "cannot handle scalar value: $!";
 	}
