@@ -1,7 +1,15 @@
-use ExtUtils::MakeMaker ;
+use ExtUtils::MakeMaker;
 
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
+eval {
+    if ((getpwuid($<))[0] eq 'eserte' && $ExtUtils::MakeMaker::VERSION < 6.54) {
+	warn <<EOF;
+**********************************************************************
+* WARNING:
+* ExtUtils::MakeMaker too old. META.yml will be imcomplete
+**********************************************************************
+EOF
+    }
+};
 
 WriteMakefile(
     'NAME'         => 'Image::Xpm',
