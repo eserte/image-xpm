@@ -14,17 +14,22 @@ BEGIN {
 }
 END   { print "not ok 1\n" unless $Loaded ; }
 
+use File::Spec qw();
+use File::Temp qw(tempdir);
+
 use Image::Xpm ;
 $Loaded = 1 ;
 use Symbol () ;
 
 $DEBUG = 1,  shift if @ARGV and $ARGV[0] eq '-d' ;
-$TRIMWIDTH = @ARGV ? shift : 60 ;
+$TRIMWIDTH = @ARGV ? shift : 256 ;
 
 report( "loaded module ", 0, '', __LINE__ ) ;
 
 my( $i, $j, $k ) ;
-my $fp = "/tmp/image-xpm" ;
+my $fp = tempdir(CLEANUP => 1);
+die "Can't create tempory directory: $!" if !$fp;
+$fp = File::Spec->catfile($fp, 'image-xpm');
  
 
 eval {
@@ -104,7 +109,7 @@ eval {
     close $fh ;
     $j = Image::Xpm->new( -file => $file ) ;
     my $pixels = $j->get( -pixels ) ;
-    $file =~ s/2/3/o ;
+    $file = "$fp-test3.xpm";
     $j->save( $file ) ;
     $j->load ;
     die "Failed to new/save/load correctly" 
