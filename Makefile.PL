@@ -33,5 +33,7 @@ WriteMakefile(
 		     author => ['Mark Summerfield <summer@perlpress.com>',
 				'Slaven Rezic <srezic@cpan.org',
 			       ],
-		   }) : ()),
+		   },
+		MIN_PERL_VERSION => '5.5.0',
+		LICENSE          => 'gpl_2') : ()),
 ) ;
