@@ -1,6 +1,8 @@
 /.prove
 /Image-Xpm-*.tar.gz
 /MANIFEST.bak
+/MYMETA.json
+/MYMETA.yml
 /Makefile
 /Makefile.old
 /blib
