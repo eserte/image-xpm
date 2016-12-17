@@ -1,5 +1,9 @@
 Revision history for Perl extension Image::Xpm.
 
+1.13 2016-12-17
+	- bugfix: del_colour now correctly deletes entries from -cindex
+	  (GH #2 and #3; reported and fixed by openstrike)
+
 1.12
 	- no code changes, just fixed tests on systems without /tmp
 	  (i.e. Windows)

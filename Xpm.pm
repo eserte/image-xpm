@@ -3,7 +3,7 @@ package Image::Xpm;    # Documented at the __END__
 use strict;
 
 use vars qw($VERSION @ISA);
-$VERSION = '1.12';
+$VERSION = '1.13';
 
 use Image::Base;
 
