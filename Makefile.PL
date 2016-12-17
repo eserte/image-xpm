@@ -37,3 +37,17 @@ WriteMakefile(
 		MIN_PERL_VERSION => '5.5.0',
 		LICENSE          => 'gpl_2') : ()),
 ) ;
+
+sub MY::postamble {
+    my $postamble = '';
+    if (defined $ENV{USER} && $ENV{USER} eq 'eserte' && $^O =~ /bsd/i && -f "../../perl.release.mk") {
+	$postamble .= <<'EOF';
+
+.include "../../perl.release.mk"
+.include "../../perl.git.mk"
+
+EOF
+    }
+
+    $postamble;
+}
