@@ -293,7 +293,7 @@ sub del_colour { # Object method
     }
 
     delete $self->{-palette}{$cc};
-    delete $self->{-colours}{$colour};
+    delete $self->{-cindex}{$colour};
     $self->{-ncolours}--;
 
     1;

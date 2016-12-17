@@ -10,7 +10,7 @@ use vars qw( $Loaded $Count $TestImage $DEBUG $TRIMWIDTH %File ) ;
 
 BEGIN { 
     $| = 1 ; 
-    print "1..14\n" 
+    print "1..19\n"
 }
 END   { print "not ok 1\n" unless $Loaded ; }
 
@@ -87,9 +87,19 @@ eval {
 report( "xy() - get", 0, $@, __LINE__ ) ;
 
 eval {
+    die "vec(0) ne #000000" unless $i->vec( 0 ) eq '#000000';
+} ;
+report( "vec() - get", 0, $@, __LINE__ ) ;
+
+eval {
     die "xy(1,2) ne #01e002" unless $i->xy( 1, 2 ) eq '#01e002';
 } ;
 report( "xy() - get", 0, $@, __LINE__ ) ;
+
+eval {
+    die "vec(9) ne #01e002" unless $i->vec( 9 ) eq '#01e002';
+} ;
+report( "vec() - get", 0, $@, __LINE__ ) ;
 
 eval {
     die "xy(3,1) ne #00f003" unless $i->xy( 3, 1 ) eq '#00f003';
@@ -97,9 +107,24 @@ eval {
 report( "xy() - get", 0, $@, __LINE__ ) ;
 
 eval {
+    die "vec(7) ne #00f003" unless $i->vec( 7 ) eq '#00f003';
+} ;
+report( "vec() - get", 0, $@, __LINE__ ) ;
+
+eval {
     die "xy(3,1,'violet') ne 4" unless $i->xy( 3, 1, 'violet' ) eq '4';
 } ;
 report( "xy() - set", 0, $@, __LINE__ ) ;
+
+eval {
+    die "vec(7) ne violet" unless $i->vec( 7 ) eq 'violet';
+} ;
+report( "vec() - get", 0, $@, __LINE__ ) ;
+
+eval {
+    die "vec(7, 'violet') ne 4" unless $i->vec( 7, 'violet' ) eq '4';
+} ;
+report( "vec() - set", 0, $@, __LINE__ ) ;
 
 eval {
     my $file = "$fp-test2.xpm" ;
