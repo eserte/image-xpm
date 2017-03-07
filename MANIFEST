@@ -3,5 +3,7 @@ Makefile.PL
 MANIFEST
 README
 t/const.t
+t/palette.t
+t/rgb2colour.t
 t/xpm.t
 Xpm.pm
