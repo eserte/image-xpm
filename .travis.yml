@@ -24,6 +24,7 @@ matrix:
   # The perl does not matter here, system perl will be used
   - perl: "5.18"
     os: osx
+    osx_image: xcode12.2
     sudo: true
 
 before_install:
