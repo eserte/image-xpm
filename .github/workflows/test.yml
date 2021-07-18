@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - '*travis*'
+      - '*appveyor*'
+      - '*doozer*'
+  pull_request:
+
+jobs:
+  test_on_host:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+     matrix:
+       os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: apt hacks
+      # the already installed libgd3 conflicts with libgd-dev to be installed
+      # also, /etc/apt/sources.list should be sufficient; all the other repositories are possibly problematic
+      run: |
+        sudo rm -f /etc/apt/sources.list.d/*.list
+        sudo apt-get update -qq
+        sudo apt-get remove -y libgd3 nginx
+      if: "startsWith(matrix.os, 'ubuntu-')"
+
+    - uses: actions/checkout@v2
+
+    - name: "perl installation (macos)"
+      run: |
+        brew install cpanminus
+        cpanm --quiet --installdeps --notest .
+      if: "startsWith(matrix.os, 'macos-')"
+
+    - name: "perl installation (windows)"
+      run: |
+        if (!(Test-Path -Path "C:\strawberry")) {
+          cinst strawberryperl
+        }
+        cpanm --quiet --installdeps --notest .
+      if: "startsWith(matrix.os, 'windows-')"
+
+    - name: "perl installation (ubuntu)"
+      run: |
+        sudo apt-get install -q --no-install-recommends -y cpanminus
+        cpanm --sudo --quiet --installdeps --notest .
+      if: "startsWith(matrix.os, 'ubuntu-')"
+
+    - name: "build and test"
+      run: |
+        perl Makefile.PL
+        make all test
+
+  test_in_container:
+    name: Test with perl ${{ matrix.perlimage }}
+    runs-on: ubuntu-latest
+    container: perl:${{ matrix.perlimage }}
+    strategy:
+      matrix:
+        include:
+          - perlimage: 5.8.9-threaded-stretch
+          - perlimage: 5.10.1-buster
+          - perlimage: 5.12.5-stretch
+          - perlimage: 5.14.4-stretch
+          - perlimage: 5.16.3-buster
+          - perlimage: 5.18.4-buster
+          - perlimage: 5.22.4-stretch
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: "build and test"
+      run: |
+        cpanm --quiet --installdeps --notest .
+        perl Makefile.PL
+        make all test
